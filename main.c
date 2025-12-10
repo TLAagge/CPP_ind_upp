@@ -15,6 +15,7 @@
     #define CLEAR_SCREEN "clear"
 #endif
 
+//-----------------------------------------------------
 //Data sturctures
 
 typedef struct {
@@ -48,6 +49,7 @@ void addRemoveAccess(SystemState* state);
 void scanCard(SystemState* state);
 void showLamp(const char* color, int duration);
 
+//-----------------------------------------------------
 //Main function
 
 int main() { //Program entry point 
@@ -113,8 +115,9 @@ void cleanupSystem(SystemState* state) { //Cleanup system state
     state->capacity = 0;  //Reset capacity
 }
 
-+//Card management functions
-+
+//------------------------------------------------------------
+//Card management functions
+
 int findCardIndex(SystemState* state, const char* shortcode) { //Finds index of card by shortcode
     for (int i = 0; i < state->cardCount; i++) { //Loop through cards
         if (strcmp(state->cards[i].shortcode, shortcode) == 0) { //Check for match
@@ -133,7 +136,7 @@ void addOrUpdateCard(SystemState* state, const char* shortcode, int hasAccess) {
     } else { //Card doesn't exist, add new card
         //Check if we need to expand capacity
         if (state->cardCount >= state->capacity) {
-            state->capacity *= 2;  //Double the capacity
+            state->capacity *= 2;  //Double the capacity. The reason being to reduce number of realloc calls.
             Card* newCards = (Card*)realloc(state->cards, state->capacity * sizeof(Card)); //Reallocate memory
             
             if (newCards == NULL) { //Check for allocation failure
@@ -146,7 +149,7 @@ void addOrUpdateCard(SystemState* state, const char* shortcode, int hasAccess) {
         
         //Add new card
         strncpy(state->cards[state->cardCount].shortcode, shortcode, sizeof(state->cards[state->cardCount].shortcode) - 1); //Copy shortcode
-        state->cards[state->cardCount].shortcode[sizeof(state->cards[state->cardCount].shortcode) - 1] = '\0';
+        state->cards[state->cardCount].shortcode[sizeof(state->cards[state->cardCount].shortcode) - 1] = '\0'; //Ensure null-termination
         state->cards[state->cardCount].hasAccess = hasAccess; //Set access
         getCurrentDateTime(state->cards[state->cardCount].dateAdded, sizeof(state->cards[state->cardCount].dateAdded)); //Set date added
         state->cardCount++; //Increment card count
@@ -159,6 +162,7 @@ void getCurrentDateTime(char* buffer, size_t size) { //Gets current date and tim
     strftime(buffer, size, "%Y-%m-%d %H:%M:%S", t); //Format date and time
 }
 
+//------------------------------------------------------------
 //User interface functions
 
 void showMainMenu() { //Displays main menu
@@ -234,11 +238,35 @@ void addRemoveAccess(SystemState* state) { //Adds or removes access for a card
         int choice = safeInputInt("Enter your choice: ");
         
         if (choice == 1) {
-            addOrUpdateCard(state, shortcode, 1);
-            printf("\nAccess GRANTED for card '%s'\n", shortcode);
+            if (state->cards[index].hasAccess == 1) { //Already has access
+                printf("\nWARNING: Card '%s' already has access.\n", shortcode); 
+                printf("Update timestamp anyway? (1=Yes, 2=No): ");
+                int confirm = safeInputInt(""); //Prompt for confirmation
+                if (confirm == 1) {
+                    addOrUpdateCard(state, shortcode, 1); //Update timestamp
+                    printf("\nTimestamp updated for card '%s'\n", shortcode);
+                } else { //Cancel operation
+                    printf("\nOperation cancelled.\n");
+                }
+            } else { //Grant access
+                addOrUpdateCard(state, shortcode, 1);
+                printf("\nAccess GRANTED for card '%s'\n", shortcode);
+            }
         } else if (choice == 2) {
-            addOrUpdateCard(state, shortcode, 0);
-            printf("\nAccess DENIED for card '%s'\n", shortcode);
+            if (state->cards[index].hasAccess == 0) {
+                printf("\nWARNING: Card '%s' already has access denied.\n", shortcode);
+                printf("Update timestamp anyway? (1=Yes, 2=No): ");
+                int confirm = safeInputInt("");
+                if (confirm == 1) {
+                    addOrUpdateCard(state, shortcode, 0);
+                    printf("\nTimestamp updated for card '%s'\n", shortcode);
+                } else {
+                    printf("\nOperation cancelled.\n");
+                }
+            } else {
+                addOrUpdateCard(state, shortcode, 0);
+                printf("\nAccess DENIED for card '%s'\n", shortcode);
+            }
         } else {
             printf("\nOperation cancelled.\n");
         }

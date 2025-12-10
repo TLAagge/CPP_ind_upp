@@ -28,6 +28,9 @@ Tested online at: https://www.onlinegdb.com/
 1. **Remote open door** - Opens door remotely (green lamp for 3 seconds)
 2. **List all cards** - Shows all cards with their access status and date added
 3. **Add/remove access** - Create new cards or modify the access of an existing card
+   - Warns if trying to grant access to a card that already has access
+   - Warns if trying to deny access to a card that's already denied
+   - Option to update timestamp only if needed
 4. **Scan card** - Simulate card scanning (RED=denied, GREEN=granted)
 5. **Exit** - Clean shutdown with proper memory cleanup
 
